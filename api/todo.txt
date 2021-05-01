@@ -1,0 +1,37 @@
+ACTION
+
+startRtcStream()
+    -> Check that rtmpKey exiest
+    -> Get config from database
+    -> Check user start sending data
+    -> Redirect data to youtube rtmp server
+    -> Change streaming status to true and streaming source to RTMP
+
+startRtmpStream()
+    -> Check that video file exiest
+    -> Check that rtmpKey exiest
+    -> Get reStreaming settings from database
+    -> Change ffmpeg args acording to restream settings
+    -> Start streaming from video file on server to youtube with ffmpeg new settings
+    -> Change streaming status to true and streaming source to RTMP
+
+
+stopStream()
+    -> Check streaming status and source
+    -> Get running process id from database
+    -> Kill process by process id
+
+
+downloadVideo()
+    -> Check youtube url is valid or not
+    -> Get downloading setting from database
+    -> Delete all previous downloaded video
+    -> Start video downloading and set downloading status to true
+    -> Once downloaded concat all video into one using ffmpeg
+    -> Once done set status to downloaded with timestamp and video url
+
+
+canStreamable()
+    -> Check wether or not already one streaming is on
+    -> If already streaming then give user option to stop streaming
+
