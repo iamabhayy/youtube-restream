@@ -2,7 +2,9 @@ import express from 'express';
 import dateFormat from 'dateformat';
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { fork, spawn} from 'child_process';
+import { fork, exec, spawn} from 'child_process';
+
+import mergeVideo from './functions/video-merge';
 
 const app = express();
 const server = createServer(app);
@@ -19,9 +21,7 @@ var streamInfo = {
     source: null,
 };
 
-var downloaderInfo = {
-    downloading: false, 
-};
+var downloading = false;
 
 
 var ffmpegProcess;
@@ -49,7 +49,7 @@ io.on("connection", (socket) => {
         var options = [
             '-re', 
             '-stream_loop', 
-            '-1', '-i', '/stream/test.mkv', 
+            '-1', '-i', 'stream/output.mp4', 
             '-vf', 'scale=1280:720', '-b:v', '1M', '-b:a', '64k', 
             '-preset', 'veryfast', '-g', '30', '-r', '30', 
             '-flvflags', 
@@ -105,6 +105,12 @@ io.on("connection", (socket) => {
     //TODO! Video downloader socket connection
 
     socket.on('startDownloading', (data)=>{
+
+        if(downloading){
+            socket.emit('fatal','Previous downloading in progress.');
+            return;
+        }
+
         console.log('Downloading start');
 
         const channelId = 'UCMn-zv1SE-2y6vyewscfFqw';
@@ -113,12 +119,13 @@ io.on("connection", (socket) => {
 
         const dateBefore = dateFormat(Date.now(), 'yyyymmdd');
         const date = new Date();
-        const dateAfter = dateFormat(date.setDate(date.getDate()-6), 'yyyymmdd');
+        const dateAfter = dateFormat(date.setDate(date.getDate()-dayCount), 'yyyymmdd');
 
 
         // Change ffmpeg args acording to restream settings
         var options = [
             '-i',
+            '-o', 'videos/%(title)s.%(ext)s',
             '--dateafter', dateAfter,
             '--datebefore', dateBefore,
             youtubeUrl
@@ -128,24 +135,34 @@ io.on("connection", (socket) => {
         downloaderProcess = spawn('youtube-dl', options);
 
         // Change streaming status to true and streaming source to RTMP
-        downloaderInfo.downloading = true;
+        downloading = true;
 
         downloaderProcess.stderr.on('data',function(d){
             console.log(d);
 			socket.emit('ffmpeg_stderr',''+d);
 		});
 
+        downloaderProcess.on('close', (code)=>{
+            console.log(code);
+            if(code==0){
+                console.log('Downloading complete');
+                mergeVideo();
+            }else{
+                console.log('Downloading failled');
+            }
+        });
+
 		downloaderProcess.on('error',function(e){
 			console.log('child process error'+e);
 			socket.emit('fatal','ffmpeg error!'+e);
-			downloaderInfo.downloading = false;
+			downloading = false;
 			socket.disconnect();
 		});
 
 		downloaderProcess.on('exit',function(e){
 			console.log('child process exit'+e);
 			socket.emit('fatal','ffmpeg exit!'+e);
-            downloaderInfo.downloading = false;
+            downloading = false;
 			socket.disconnect();
 		});
     });
@@ -156,9 +173,9 @@ io.on("connection", (socket) => {
 		try{
             downloaderProcess.stdin.end();
 			downloaderProcess.kill('SIGINT');
-            streamInfo.live=false;
-			console.log("ffmpeg process ended!");
-		}catch(e){console.warn('killing ffmoeg process attempt failed...');}
+            downloading = false;
+			console.log("Downloading stop");
+		}catch(e){console.warn('killing downloading process attempt failed...', e);}
 	});
 });
 
