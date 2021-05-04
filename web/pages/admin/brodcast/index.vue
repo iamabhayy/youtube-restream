@@ -7,14 +7,14 @@
 
     <div class="container my-5">
         <div class="position-relative">
-            <video playsinline autoplay width="100%" id="myStream" height="56.25%" class="border"></video>
+            <video playsinline autoplay width="100%" id="myStream" height="56.25%" class="border" muted></video>
             <span class="badge badge-danger m-4 p-2 stream-status">Live</span>
             <div class="d-flex justify-content-center align-items-center my-4 action">
                 <button type="button" class="btn btn-primary btn-lg btn-circle">
                     <i class="fas fa-microphone"></i>
                 </button>
-                <button type="button" class="btn btn-warning btn-lg btn-circle mx-3">Publish</button>
-                <button type="button" class="btn btn-success btn-lg btn-circle">
+                <button type="button" class="btn btn-warning btn-lg btn-circle mx-3" @click="startRecording">Publish</button>
+                <button type="button" class="btn btn-success btn-lg btn-circle" @click="stopRecording">
                     <i class="fas fa-video"></i>
                 </button>
             </div>
@@ -37,10 +37,12 @@
 
 <script>
 // import 'webrtc-adapter';
+import socket from '~/plugins/socket.io';
 export default {
     data() {
         return {
             videoEl: null,
+            mediaRecorder: null,
             url: 'https://www.youtube.com/channel/UCN7dywl5wDxTu1RM3eJ_h9Q/videos',
             constraints :{
                 audio: true,
@@ -56,6 +58,41 @@ export default {
         handleSuccess(stream) {
             window.stream = stream; // make stream available to browser console
             this.videoEl.srcObject = stream;
+        },
+
+        startRecording() {
+            const mimeType = 'video/webm;codecs=vp9,opus';
+            const options = {mimeType};
+
+            try {
+                this.mediaRecorder = new MediaRecorder(window.stream, options);
+            } catch (e) {
+                console.error('Exception while creating MediaRecorder:', e);
+                errorMsgElement.innerHTML = `Exception while creating MediaRecorder: ${JSON.stringify(e)}`;
+                return;
+            }
+
+            console.log('Created MediaRecorder', this.mediaRecorder, 'with options', options);
+
+            this.mediaRecorder.onstop = (event) => {
+                console.log('Recorder stopped: ', event);
+            };
+
+            this.mediaRecorder.ondataavailable = this.handleDataAvailable;
+            this.mediaRecorder.start(1000);
+
+            console.log('MediaRecorder started', this.mediaRecorder);
+        },
+
+        stopRecording(){
+            this.mediaRecorder.stop();
+        },
+
+        handleDataAvailable(event) {
+            console.log('handleDataAvailable', event);
+            if (event.data && event.data.size > 0) {
+                socket.emit('webrtcStream', event.data)
+            }
         },
 
         handleError(error) {

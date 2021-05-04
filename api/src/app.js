@@ -74,7 +74,6 @@ io.on("connection", (socket) => {
 			console.log(d);
 		});
 
-
 		ffmpegProcess.on('error',function(e){
 			console.log('child process error'+e);
 			socket.emit('fatal','ffmpeg error!'+e);
@@ -91,6 +90,87 @@ io.on("connection", (socket) => {
         
     });
 
+    function startFFMPEG() {
+        // Check that rtmpKey exiest 
+        var rtmpUrl = 'rtmp://a.rtmp.youtube.com/live2/dexv-s07x-50cu-z7r1-3aaq';
+
+        // TODO Get reStreaming settings from database
+
+        // Change ffmpeg args acording to restream settings
+        var options = [
+            '-i','-',
+
+            // video codec config: low latency, adaptive bitrate
+            '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency',
+      
+            // audio codec config: sampling frequency (11025, 22050, 44100), bitrate 64 kbits
+            '-c:a', 'aac', '-ar', '44100', '-b:a', '64k',
+      
+            //force to overwrite
+            '-y',
+      
+            // used for audio sync
+            '-use_wallclock_as_timestamps', '1',
+            '-async', '1',
+      
+            //'-filter_complex', 'aresample=44100', // resample audio to 44100Hz, needed if input is not 44100
+            //'-strict', 'experimental',
+            '-bufsize', '1000',
+            '-f', 'flv',
+      
+            rtmpUrl
+        ];
+
+        // Start streaming from video file on server to youtube with ffmpeg new settings
+
+        ffmpegProcess = spawn('ffmpeg', options);
+
+        // Change streaming status to true and streaming source to RTMP
+        streamInfo.source = "RTMP";
+        streamInfo.live = true;
+
+        ffmpegProcess.stderr.on('data',function(d){
+			socket.emit('ffmpeg_stderr',''+d);
+		});
+
+        ffmpegProcess.stdout.on('data',function(d){
+			console.log(d);
+		});
+
+		ffmpegProcess.on('error',function(e){
+			console.log('child process error'+e);
+			socket.emit('fatal','ffmpeg error!'+e);
+			streamInfo.live=false;
+			socket.disconnect();
+		});
+
+		ffmpegProcess.on('exit',function(e){
+			console.log('child process exit'+e);
+			socket.emit('fatal','ffmpeg exit!'+e);
+            streamInfo.live=false;
+			socket.disconnect();
+		});
+    }
+
+
+    socket.on('webrtcStream', function (data) {
+        console.log(data)
+
+        if(streamInfo.live){
+            console.log('oops');
+            socket.emit('fatal','stream already started.');
+        }else {
+            startFFMPEG();
+        }
+
+        if (Buffer.isBuffer(data)) {
+            console.log('this is some video data');
+            ffmpegProcess.stdin.write(data);
+        } else {
+            console.log('not blob');
+        }
+    });
+
     socket.on('stopStream', function () {
 		console.log("socket disconnected!");
 		if(ffmpegProcess)
@@ -101,6 +181,7 @@ io.on("connection", (socket) => {
 			console.log("ffmpeg process ended!");
 		}catch(e){console.warn('killing ffmoeg process attempt failed...');}
 	});
+
 
     //TODO! Video downloader socket connection
 
