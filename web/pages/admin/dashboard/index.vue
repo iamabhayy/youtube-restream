@@ -21,7 +21,7 @@ export default {
     },
 
     startStreaming(){
-      socket.emit('startRtmpStream');
+      socket.emit('startStream', { isBroadcasting: false });
     },
     stopStreaming(){
       socket.emit('stopStream');

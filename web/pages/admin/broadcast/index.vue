@@ -47,8 +47,8 @@ export default {
             constraints :{
                 audio: true,
                 video: {
-                    width: {exact: 1280}, 
-                    height: {exact: 720},
+                    width: {exact: 1920}, 
+                    height: {exact: 1080},
                 }
             }
         }
@@ -81,6 +81,8 @@ export default {
             this.mediaRecorder.ondataavailable = this.handleDataAvailable;
             this.mediaRecorder.start(1000);
 
+            socket.emit('startStream', {isBroadcasting: true});
+            
             console.log('MediaRecorder started', this.mediaRecorder);
         },
 
@@ -91,7 +93,7 @@ export default {
         handleDataAvailable(event) {
             console.log('handleDataAvailable', event);
             if (event.data && event.data.size > 0) {
-                socket.emit('webrtcStream', event.data)
+                socket.emit('broadcastStream', event.data)
             }
         },
 

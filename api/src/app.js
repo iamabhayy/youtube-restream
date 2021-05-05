@@ -30,22 +30,19 @@ var downloaderProcess;
 io.on("connection", (socket) => {
     console.log('Socket connected');
 
-    socket.on('startRtmpStream', (data)=>{
+    socket.on('startStream', (data) => {
+
         if(streamInfo.live){
             console.log('oops');
             socket.emit('fatal','stream already started.');
 			return;
         }
 
-        // Check that video file exiest
-        var file = 'test.mkv'
-
         // Check that rtmpKey exiest
-        var rtmpUrl = 'rtmp://localhost/live/test';
+        var rtmpUrl = 'rtmp://a.rtmp.youtube.com/live2/dexv-s07x-50cu-z7r1-3aaq';
 
         // TODO Get reStreaming settings from database
 
-        // Change ffmpeg args acording to restream settings
         var options = [
             '-re', 
             '-stream_loop', 
@@ -57,112 +54,59 @@ io.on("connection", (socket) => {
             '-f', 'flv',
             rtmpUrl
         ];
+        
+        streamInfo.source = "RTMP";
 
+        if(data.isBroadcasting){
+            streamInfo.source = "WebRTC";
+            options = [
+                '-i','-',
+                '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency',
+                '-c:a', 'aac', '-ar', '44100', '-b:a', '64k',
+                '-y',
+                '-use_wallclock_as_timestamps', '1',
+                '-async', '1',
+                '-bufsize', '3000',
+                '-f', 'flv',
+                rtmpUrl
+            ];
+        }
+
+        console.log(options, data);
         // Start streaming from video file on server to youtube with ffmpeg new settings
 
         ffmpegProcess = spawn('ffmpeg', options);
 
         // Change streaming status to true and streaming source to RTMP
-        streamInfo.source = "RTMP";
         streamInfo.live = true;
 
-        ffmpegProcess.stderr.on('data',function(d){
-			socket.emit('ffmpeg_stderr',''+d);
+        ffmpegProcess.stderr.on('data', (res) => {
+			socket.emit('ffmpeg_stderr',''+res);
 		});
 
-        ffmpegProcess.stdout.on('data',function(d){
-			console.log(d);
+        ffmpegProcess.stdout.on('data', (res) => {
+			console.log(res);
 		});
 
-		ffmpegProcess.on('error',function(e){
-			console.log('child process error'+e);
-			socket.emit('fatal','ffmpeg error!'+e);
+		ffmpegProcess.on('error', (err) => {
+			console.log('child process error'+err);
+			socket.emit('fatal','ffmpeg error!'+err);
+
 			streamInfo.live=false;
 			socket.disconnect();
 		});
 
-		ffmpegProcess.on('exit',function(e){
-			console.log('child process exit'+e);
-			socket.emit('fatal','ffmpeg exit!'+e);
+		ffmpegProcess.on('exit', (err) => {
+			console.log('child process exit'+err);
+			socket.emit('fatal','ffmpeg exit!'+err);
+
             streamInfo.live=false;
 			socket.disconnect();
 		});
         
     });
 
-    function startFFMPEG() {
-        // Check that rtmpKey exiest 
-        var rtmpUrl = 'rtmp://a.rtmp.youtube.com/live2/dexv-s07x-50cu-z7r1-3aaq';
-
-        // TODO Get reStreaming settings from database
-
-        // Change ffmpeg args acording to restream settings
-        var options = [
-            '-i','-',
-
-            // video codec config: low latency, adaptive bitrate
-            '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency',
-      
-            // audio codec config: sampling frequency (11025, 22050, 44100), bitrate 64 kbits
-            '-c:a', 'aac', '-ar', '44100', '-b:a', '64k',
-      
-            //force to overwrite
-            '-y',
-      
-            // used for audio sync
-            '-use_wallclock_as_timestamps', '1',
-            '-async', '1',
-      
-            //'-filter_complex', 'aresample=44100', // resample audio to 44100Hz, needed if input is not 44100
-            //'-strict', 'experimental',
-            '-bufsize', '1000',
-            '-f', 'flv',
-      
-            rtmpUrl
-        ];
-
-        // Start streaming from video file on server to youtube with ffmpeg new settings
-
-        ffmpegProcess = spawn('ffmpeg', options);
-
-        // Change streaming status to true and streaming source to RTMP
-        streamInfo.source = "RTMP";
-        streamInfo.live = true;
-
-        ffmpegProcess.stderr.on('data',function(d){
-			socket.emit('ffmpeg_stderr',''+d);
-		});
-
-        ffmpegProcess.stdout.on('data',function(d){
-			console.log(d);
-		});
-
-		ffmpegProcess.on('error',function(e){
-			console.log('child process error'+e);
-			socket.emit('fatal','ffmpeg error!'+e);
-			streamInfo.live=false;
-			socket.disconnect();
-		});
-
-		ffmpegProcess.on('exit',function(e){
-			console.log('child process exit'+e);
-			socket.emit('fatal','ffmpeg exit!'+e);
-            streamInfo.live=false;
-			socket.disconnect();
-		});
-    }
-
-
-    socket.on('webrtcStream', function (data) {
-        console.log(data)
-
-        if(streamInfo.live){
-            console.log('oops');
-            socket.emit('fatal','stream already started.');
-        }else {
-            startFFMPEG();
-        }
-
+    socket.on('broadcastStream', (data) => {
         if (Buffer.isBuffer(data)) {
             console.log('this is some video data');
             ffmpegProcess.stdin.write(data);
