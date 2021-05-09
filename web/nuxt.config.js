@@ -12,6 +12,10 @@ export default {
     ]
   },
 
+  env: {
+    serverUrl: process.env.BASE_SERVER_URL || 'http://localhost:4000'
+  },
+
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
     '~/assets/css/style.scss'

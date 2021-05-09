@@ -9,6 +9,9 @@ import mergeVideo from './functions/video-merge';
 const app = express();
 const server = createServer(app);
 
+
+app.use(express.static('stream'));
+
 const io = new Server(server, {
     cors: {
         origin: "*",
@@ -19,7 +22,7 @@ const io = new Server(server, {
 var streamInfo = {
     live: false, 
     source: null,
-};
+}; 
 
 var downloading = false;
 
