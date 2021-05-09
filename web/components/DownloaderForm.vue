@@ -13,7 +13,7 @@
             </div>
             <div class="d-flex justify-content-between">
                 <b-input-group append="Days" style="width:120px">
-                    <b-form-input v-model="days" type="number" min="1" :disabled="downloading" />
+                    <b-form-input v-model.number="days" type="number" min="1" :disabled="downloading" />
                 </b-input-group>
                 
                 <div class="d-flex">
@@ -44,12 +44,10 @@ export default {
 
     methods: {
         startDownloading() {
-            // socket.emit('startDownloading');
-            this.downloading = true;
+            socket.emit('startDownloading', {days: this.days});
         },
         stopDownloading(){
-            // socket.emit('stopDownloading');
-            this.downloading = false;
+            socket.emit('stopDownloading');
         },
     },
 }

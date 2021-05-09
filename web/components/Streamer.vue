@@ -27,17 +27,29 @@
                 type="text" disabled readonly />
         </b-form-group>
 
-        <div class="mt-4">
-            <b-button block size="lg" variant="danger">Start Streaming</b-button>
+        <div class="mt-4" v-if="!streaming">
+            <b-button block size="lg" variant="danger" @click="startStreaming">Start Streaming</b-button>
             <hr data-content="OR" class="hr-text my-4">
             <b-button block size="lg" to="/admin/broadcast">Live Broadcasting</b-button>
+        </div>
+        <div v-else>
+            <b-button block size="lg" variant="danger" @click="stopStreaming">Stop Streaming</b-button>
         </div>
       </div>
   </b-card>
 </template>
 
 <script>
+import socket from '~/plugins/socket.io';
+
 export default {
+    props: {
+        streaming: {
+            type: Boolean,
+            default: false,
+        },
+    },
+
     data() {
         return {
             form: {
@@ -47,6 +59,16 @@ export default {
             }
         }
     },
+
+    methods: {
+        startStreaming(){
+            socket.emit('startStream', { isBroadcasting: false });
+        },
+        
+        stopStreaming(){
+            socket.emit('stopStream');
+        }
+    },
 }
 </script>
 
@@ -54,7 +76,6 @@ export default {
 hr.solid {
     border-top: 1px solid #999;
 }
-
 
 hr.hr-text {
   position: relative;
