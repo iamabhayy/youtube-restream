@@ -67,9 +67,10 @@ app.post('/login', (req, res) => {
     res.send('Invalid password');
 });
 
-app.get('/user', (req, res) => {
-    if(req.user){
-        res.send(req.user);
+app.get('/user', ({user}, res) => {
+    if(user){
+        const userData = db.get('users').find({ email: user.sub }).value();
+        res.send(userData)
     }
     res.send('error')
 });

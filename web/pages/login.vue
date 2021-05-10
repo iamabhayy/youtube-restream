@@ -62,7 +62,14 @@ export default {
           }).then((response)=> {
             console.log(response);
             this.busy = false;
-            localStorage.setItem("token", response.data.token);
+
+            this.$cookies.set('token', response.data.token, {
+              path: '/',
+              maxAge: 60 * 60 * 24 * 7
+            });
+
+            this.$store.commit('setUser', {user: response.data.user});
+
             this.$router.push('/admin/dashboard')
           })
           .catch((error) => {

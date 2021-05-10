@@ -18,6 +18,8 @@
 <script>
 import socket from '~/plugins/socket.io';
 export default {
+  middleware: 'auth',
+  
   data() {
     return {
       status: {}

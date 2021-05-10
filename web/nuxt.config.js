@@ -43,6 +43,7 @@ export default {
     '@nuxtjs/pwa',
 
     'nuxt-socket-io',
+    'cookie-universal-nuxt',
   ],
 
   io: {
