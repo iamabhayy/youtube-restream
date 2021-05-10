@@ -1,16 +1,78 @@
+import expressJwt from 'express-jwt';
+import bodyParser from 'body-parser';
+import jwt from 'jsonwebtoken';
 import express from 'express';
+import bcrypt from 'bcrypt';
+import cors from 'cors';
+
 import dateFormat from 'dateformat';
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { fork, exec, spawn} from 'child_process';
+import { spawn } from 'child_process';
+
+const low = require('lowdb')
+const FileSync = require('lowdb/adapters/FileSync')
+ 
+const adapter = new FileSync('db.json')
+const db = low(adapter)
 
 import mergeVideo from './functions/video-merge';
 
 const app = express();
 const server = createServer(app);
 
+app.use(cors({
+    origin: 'http://localhost:3000',
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+  }))
 
+app.use(
+    expressJwt({
+        secret: 'superSecret',
+        algorithms: ["HS256"],
+        credentialsRequired: false
+    })
+);
+
+app.use(bodyParser.json())
 app.use(express.static('stream'));
+
+app.post('/login', (req, res) => {
+    console.log(req.body);
+    const { email, password } = req.body;
+
+    const user = db.get('users').find({ email: email }).value();
+    const matchPasswords = bcrypt.compareSync(password, user.password);
+
+    console.log(matchPasswords, user);
+
+    if (matchPasswords) {
+        const token = jwt.sign(
+            {
+                payload: { role: user.role, email: user.email, name: user.name}
+            },
+            'superSecret',
+            {
+                algorithm: "HS256",
+                subject: user.email,
+                expiresIn: "365d"
+            }
+        );
+
+        res.cookie('AuthToken', token);
+        res.cookie('isAdmin', 'true');
+        res.send({ token: token, user: user });
+    }
+
+    res.send('Invalid password');
+});
+
+app.get('/user', (req, res) => {
+    if(req.user){
+        res.send(req.user);
+    }
+    res.send('error')
+});
 
 const io = new Server(server, {
     cors: {
@@ -21,9 +83,9 @@ const io = new Server(server, {
 
 var status = {
     downloading: false,
-    streaming: false, 
+    streaming: false,
     source: null,
-}; 
+};
 
 
 var ffmpegProcess;
@@ -34,10 +96,10 @@ io.on("connection", (socket) => {
 
     socket.on('startStream', (data) => {
 
-        if(status.streaming){
+        if (status.streaming) {
             console.log('oops');
-            socket.emit('fatal','stream already started.');
-			return;
+            socket.emit('fatal', 'stream already started.');
+            return;
         }
 
         // Check that rtmpKey exiest
@@ -46,23 +108,23 @@ io.on("connection", (socket) => {
         // TODO Get reStreaming settings from database
 
         var options = [
-            '-re', 
-            '-stream_loop', 
-            '-1', '-i', 'stream/output.mp4', 
-            '-vf', 'scale=1280:720', '-b:v', '1M', '-b:a', '64k', 
-            '-preset', 'veryfast', '-g', '30', '-r', '30', 
-            '-flvflags', 
-            'no_duration_filesize', 
+            '-re',
+            '-stream_loop',
+            '-1', '-i', 'stream/output.mp4',
+            '-vf', 'scale=1280:720', '-b:v', '1M', '-b:a', '64k',
+            '-preset', 'veryfast', '-g', '30', '-r', '30',
+            '-flvflags',
+            'no_duration_filesize',
             '-f', 'flv',
             rtmpUrl
         ];
-        
+
         status.source = "RTMP";
 
-        if(data.isBroadcasting){
+        if (data.isBroadcasting) {
             status.source = "WebRTC";
             options = [
-                '-i','-',
+                '-i', '-',
                 '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency',
                 '-c:a', 'aac', '-ar', '44100', '-b:a', '64k',
                 '-y',
@@ -84,29 +146,29 @@ io.on("connection", (socket) => {
         io.emit('status', { ...status });
 
         ffmpegProcess.stderr.on('data', (res) => {
-			socket.emit('ffmpeg_stderr',''+res);
-		});
+            socket.emit('ffmpeg_stderr', '' + res);
+        });
 
         // ffmpegProcess.stdout.on('data', (res) => {
-		// 	console.log(res);
-		// });
+        // 	console.log(res);
+        // });
 
-		ffmpegProcess.on('error', (err) => {
-			console.log('child process error'+err);
-			socket.emit('fatal','ffmpeg error!'+err);
-
-            status.streaming = false;
-			io.emit('status', { ...status });
-		});
-
-		ffmpegProcess.on('exit', (err) => {
-			console.log('child process exit'+err);
-			socket.emit('fatal','ffmpeg exit!'+err);
+        ffmpegProcess.on('error', (err) => {
+            console.log('child process error' + err);
+            socket.emit('fatal', 'ffmpeg error!' + err);
 
             status.streaming = false;
             io.emit('status', { ...status });
-		});
-        
+        });
+
+        ffmpegProcess.on('exit', (err) => {
+            console.log('child process exit' + err);
+            socket.emit('fatal', 'ffmpeg exit!' + err);
+
+            status.streaming = false;
+            io.emit('status', { ...status });
+        });
+
     });
 
     socket.on('broadcastStream', (data) => {
@@ -119,24 +181,24 @@ io.on("connection", (socket) => {
     });
 
     socket.on('stopStream', function () {
-		console.log("socket disconnected!");
-		if(ffmpegProcess)
-		try{
-            ffmpegProcess.stdin.end();
-			ffmpegProcess.kill('SIGINT');
+        console.log("socket disconnected!");
+        if (ffmpegProcess)
+            try {
+                ffmpegProcess.stdin.end();
+                ffmpegProcess.kill('SIGINT');
 
-			console.log("ffmpeg process ended!");
-            status.streaming = false;
-            io.emit('status', { ...status });
-		}catch(e){console.warn('killing ffmoeg process attempt failed...');}
-	});
+                console.log("ffmpeg process ended!");
+                status.streaming = false;
+                io.emit('status', { ...status });
+            } catch (e) { console.warn('killing ffmoeg process attempt failed...'); }
+    });
 
 
     //TODO! Video downloader socket connection
 
-    socket.on('startDownloading', (data)=>{
-        if(status.downloading){
-            socket.emit('fatal','Previous downloading in progress.');
+    socket.on('startDownloading', (data) => {
+        if (status.downloading) {
+            socket.emit('fatal', 'Previous downloading in progress.');
             return;
         }
 
@@ -148,7 +210,7 @@ io.on("connection", (socket) => {
 
         const dateBefore = dateFormat(Date.now(), 'yyyymmdd');
         const date = new Date();
-        const dateAfter = dateFormat(date.setDate(date.getDate()-dayCount), 'yyyymmdd');
+        const dateAfter = dateFormat(date.setDate(date.getDate() - dayCount), 'yyyymmdd');
 
 
         // Change ffmpeg args acording to restream settings
@@ -167,50 +229,54 @@ io.on("connection", (socket) => {
         status.downloading = true;
         io.emit('status', { ...status });
 
-        downloaderProcess.stderr.on('data',function(d){
+        downloaderProcess.stderr.on('data', function (d) {
             console.log(d);
-			socket.emit('ffmpeg_stderr',''+d);
-		});
+            socket.emit('ffmpeg_stderr', '' + d);
+        });
 
-        downloaderProcess.on('close', (code)=>{
+        downloaderProcess.stdout.on('data', (res) => {
+        	console.log(res);
+        });
+
+        downloaderProcess.on('close', (code) => {
             console.log(code);
-            if(code==0){
+            if (code == 0) {
                 console.log('Downloading complete');
                 mergeVideo();
-            }else{
+            } else {
                 console.log('Downloading failled');
             }
         });
 
-		downloaderProcess.on('error',function(e){
-			console.log('child process error'+e);
-			socket.emit('fatal','ffmpeg error!'+e);
+        downloaderProcess.on('error', function (e) {
+            console.log('child process error' + e);
+            socket.emit('fatal', 'ffmpeg error!' + e);
 
             status.downloading = false;
-			io.emit('status', { ...status });
-		});
+            io.emit('status', { ...status });
+        });
 
-		downloaderProcess.on('exit',function(e){
-			console.log('child process exit'+e);
-			socket.emit('fatal','ffmpeg exit!'+e);
+        downloaderProcess.on('exit', function (e) {
+            console.log('child process exit' + e);
+            socket.emit('fatal', 'ffmpeg exit!' + e);
 
             status.downloading = false;
-			io.emit('status', { ...status });
-		});
+            io.emit('status', { ...status });
+        });
     });
 
     socket.on('stopDownloading', function () {
-		if(downloaderProcess)
-		try{
-            downloaderProcess.stdin.end();
-			downloaderProcess.kill('SIGINT');
+        if (downloaderProcess)
+            try {
+                downloaderProcess.stdin.end();
+                downloaderProcess.kill('SIGINT');
 
-			console.log("Downloading stop");
-            status.downloading = false;
-			io.emit('status', { ...status });
+                console.log("Downloading stop");
+                status.downloading = false;
+                io.emit('status', { ...status });
 
-		}catch(e){console.warn('killing downloading process attempt failed...', e);}
-	});
+            } catch (e) { console.warn('killing downloading process attempt failed...', e); }
+    });
 
     io.emit('status', { ...status });
 });

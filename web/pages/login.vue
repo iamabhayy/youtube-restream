@@ -39,6 +39,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
     layout: 'main',
     data() {
@@ -52,12 +54,23 @@ export default {
     },
     methods: {
       login() {
-        this.busy = true;
-        setTimeout(()=>{
-          this.$router.push('/admin/dashboard')
-          this.busy = false;
-        }, 2000)
-      }
+        if(this.form.email && this.form.password){
+          this.busy = true;
+          axios.post('http://localhost:4000/login', {
+            email: this.form.email,
+            password: this.form.password
+          }).then((response)=> {
+            console.log(response);
+            this.busy = false;
+            localStorage.setItem("token", response.data.token);
+            this.$router.push('/admin/dashboard')
+          })
+          .catch((error) => {
+            console.log(error);
+            this.busy = false;
+          });
+        }
+      },
     },
 }
 </script>

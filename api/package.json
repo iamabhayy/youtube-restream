@@ -4,19 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon -r esm ./src/app.js"
+    "start": "nodemon --ignore *.json -r esm ./src/app.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.0.1",
+    "body-parser": "^1.19.0",
     "dateformat": "^4.5.1",
     "esm": "^3.2.25",
     "express": "^4.17.1",
+    "express-jwt": "^6.0.0",
     "file-extension": "^4.0.5",
+    "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
+    "lowdb": "^1.0.0",
     "nodemon": "^2.0.7",
     "shelljs": "^0.8.4",
     "socket.io": "^4.0.1",
+    "taffydb": "^2.7.3",
     "video-stitch": "^1.6.0",
     "ws": "^7.4.5",
     "ytdl-core": "^4.5.0"
