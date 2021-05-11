@@ -1,8 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-
-const shell = require('shelljs');
-var fileExtension = require('file-extension'); 
+import fs from 'fs';
+import path from 'path';
+import {exec} from 'child_process';
+import fileExtension from 'file-extension'; 
 
 const videoDirectory = 'videos/';
 
@@ -22,7 +21,7 @@ export default function mergeVideo() {
         writeStream.write(list);
         writeStream.end();
     
-        shell.exec(`ffmpeg -y -safe 0 -f concat -i ${listFilePath} -c copy ${outputFilePath}`, (error, stdout, stderr) => {
+        exec(`ffmpeg -y -safe 0 -f concat -i ${listFilePath} -c copy ${outputFilePath}`, (error, stdout, stderr) => {
             if (error) {
                 console.log(`error: ${error.message}`);
                 return;

@@ -4,19 +4,19 @@ import jwt from 'jsonwebtoken';
 import express from 'express';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
+import low from 'lowdb';
 
-import dateFormat from 'dateformat';
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { spawn } from 'child_process';
 
-const low = require('lowdb')
 const FileSync = require('lowdb/adapters/FileSync')
- 
 const adapter = new FileSync('db.json')
 const db = low(adapter)
 
+
 import mergeVideo from './functions/video-merge';
+import getOptions from './functions/youtube-data-api';
 
 const app = express();
 const server = createServer(app);
@@ -197,46 +197,29 @@ io.on("connection", (socket) => {
 
     //TODO! Video downloader socket connection
 
-    socket.on('startDownloading', (data) => {
+    socket.on('startDownloading', async (data) => {
+
         if (status.downloading) {
             socket.emit('fatal', 'Previous downloading in progress.');
             return;
         }
 
-        console.log('Downloading start', data);
+        console.log('Downloading start');
 
-        const channelId = 'UCMn-zv1SE-2y6vyewscfFqw';
-        const youtubeUrl = `https://www.youtube.com/channel/${channelId}`
-        const dayCount = data.days;
-
-        const dateBefore = dateFormat(Date.now(), 'yyyymmdd');
-        const date = new Date();
-        const dateAfter = dateFormat(date.setDate(date.getDate() - dayCount), 'yyyymmdd');
-
-
-        // Change ffmpeg args acording to restream settings
-        var options = [
-            '-i',
-            '-o', 'videos/%(title)s.%(ext)s',
-            '--dateafter', dateAfter,
-            '--datebefore', dateBefore,
-            youtubeUrl
-        ];
-
-        // Start downloading videos from youtube url
-        downloaderProcess = spawn('youtube-dl', options);
-
-        // Change downloading status to true
         status.downloading = true;
         io.emit('status', { ...status });
 
+        const options = await getOptions(data.days);
+
+        console.log(options);
+
+        // Start downloading videos from youtube url
+        downloaderProcess = spawn('youtube-dl', options);
+        
+        
         downloaderProcess.stderr.on('data', function (d) {
             console.log(d);
             socket.emit('ffmpeg_stderr', '' + d);
-        });
-
-        downloaderProcess.stdout.on('data', (res) => {
-        	console.log(res);
         });
 
         downloaderProcess.on('close', (code) => {
@@ -244,25 +227,24 @@ io.on("connection", (socket) => {
             if (code == 0) {
                 console.log('Downloading complete');
                 mergeVideo();
+
+                status.downloading = false;
+                io.emit('status', { ...status });
             } else {
                 console.log('Downloading failled');
+                status.downloading = false;
+                io.emit('status', { ...status });
             }
         });
 
         downloaderProcess.on('error', function (e) {
             console.log('child process error' + e);
             socket.emit('fatal', 'ffmpeg error!' + e);
-
-            status.downloading = false;
-            io.emit('status', { ...status });
         });
 
         downloaderProcess.on('exit', function (e) {
             console.log('child process exit' + e);
             socket.emit('fatal', 'ffmpeg exit!' + e);
-
-            status.downloading = false;
-            io.emit('status', { ...status });
         });
     });
 
@@ -271,11 +253,6 @@ io.on("connection", (socket) => {
             try {
                 downloaderProcess.stdin.end();
                 downloaderProcess.kill('SIGINT');
-
-                console.log("Downloading stop");
-                status.downloading = false;
-                io.emit('status', { ...status });
-
             } catch (e) { console.warn('killing downloading process attempt failed...', e); }
     });
 

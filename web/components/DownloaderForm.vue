@@ -38,7 +38,7 @@ export default {
     },
     data() {
         return {
-            days: 2,
+            days: 1,
         }
     },
 

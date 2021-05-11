@@ -27,13 +27,13 @@
       </b-form-group>
       </div>
 
-      <b-button variant="success" class="ml-auto d-block" @click="login()" :disabled="busy">Login in to Study Hunt <i :class="busy? 'ml-2 fas fa-circle-notch fa-spin' : 'ml-2 fas fa-chevron-right'"></i></b-button>
+      <b-button variant="success" class="ml-auto d-block" @click="login()" :disabled="busy">Login in to Streamer <i :class="busy? 'ml-2 fas fa-circle-notch fa-spin' : 'ml-2 fas fa-chevron-right'"></i></b-button>
 
     </b-card>
 
     <div class="my-4 p-3 bg-dark rounded  panel-bg">
       <strong class="d-block">Don't have an account yet?</strong>
-      <nuxt-link to="/signup">Sign up</nuxt-link> or <nuxt-link to="/forget-password">Forget password</nuxt-link> to start your free trial.
+      Contact admin to create a new account for yourself.
     </div>
   </div>
 </template>
