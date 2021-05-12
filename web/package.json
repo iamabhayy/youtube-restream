@@ -21,6 +21,7 @@
     "nuxt": "^2.15.3",
     "nuxt-socket-io": "^1.1.17",
     "socket.io-client": "^4.0.1",
+    "vee-validate": "^3.4.5",
     "webrtc-adapter": "^7.7.1"
   },
   "devDependencies": {

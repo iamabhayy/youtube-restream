@@ -75,6 +75,24 @@ app.get('/user', ({user}, res) => {
     res.send('error')
 });
 
+app.get('/setting', ({user}, res) => {
+    if(user){
+        const config = db.get('setting').value();
+        res.send(config)
+    }
+    res.send('error')
+});
+
+app.post('/setting', async ({user, body}, res) => {
+    if(user){
+        const config = await db.set('setting', body).write();
+        res.send(config.setting)
+    }
+    res.send('error')
+});
+
+
+
 const io = new Server(server, {
     cors: {
         origin: "*",
