@@ -125,7 +125,11 @@ io.on("connection", (socket) => {
         }
 
         // Check that rtmpKey exiest
-        var rtmpUrl = 'rtmp://a.rtmp.youtube.com/live2/dexv-s07x-50cu-z7r1-3aaq';
+        // Load setting data from database
+
+        var setting = db.get('setting').value();
+
+        var rtmpUrl = `rtmp://a.rtmp.youtube.com/live2/${setting.rtmpKey}`;
 
         // TODO Get reStreaming settings from database
 
@@ -133,7 +137,7 @@ io.on("connection", (socket) => {
             '-re',
             '-stream_loop',
             '-1', '-i', 'stream/output.mp4',
-            '-vf', 'scale=1280:720', '-b:v', '1M', '-b:a', '64k',
+            '-vf', setting.resolution, '-b:v', setting.videoBitrate, '-b:a', setting.audioBitrate,
             '-preset', 'veryfast', '-g', '30', '-r', '30',
             '-flvflags',
             'no_duration_filesize',
