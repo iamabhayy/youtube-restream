@@ -59,36 +59,39 @@ app.post('/login', (req, res) => {
             }
         );
 
-        res.cookie('AuthToken', token);
-        res.cookie('isAdmin', 'true');
-        res.send({ token: token, user: user });
+        const setting = db.get('setting').value();
+        res.send({token, user, setting});
+    }else{
+        res.status(401).send('invalid email or password')
     }
-
-    res.send('Invalid password');
 });
 
 app.get('/user', ({user}, res) => {
     if(user){
         const userData = db.get('users').find({ email: user.sub }).value();
-        res.send(userData)
+        const setting = db.get('setting').value();
+        res.send({user: userData, setting})
+    }else {
+        res.status(401).send('not authenticated')
     }
-    res.send('error')
 });
 
 app.get('/setting', ({user}, res) => {
     if(user){
         const config = db.get('setting').value();
         res.send(config)
+    }else{
+        res.status(401).send('not authenticated')
     }
-    res.send('error')
 });
 
 app.post('/setting', async ({user, body}, res) => {
-    if(user){
+    if(user && user.payload.role == 'admin'){
         const config = await db.set('setting', body).write();
         res.send(config.setting)
+    }else {
+        res.status(401).send('not authenticated')
     }
-    res.send('error')
 });
 
 

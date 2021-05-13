@@ -17,10 +17,10 @@
   ],
   "setting": {
     "channelId": "UCj3Eqiob8ju1Z3RCJpNMdig",
-    "apiId": "AIzaSyDMMUdLMnw-lqZrbSsIBlJZulF7HbdNAww",
-    "resolution": "scale=1280:720",
+    "apiKey": "AIzaSyDMMUdLMnw-lqZrbSsIBlJZulF7HbdNAww",
     "rtmpKey": "dexv-s07x-50cu-z7r1-3aaq",
-    "videoBitRate": "1M",
-    "audioBitRate": "64k"
+    "resolution": "scale=1280:720",
+    "audioBitrate": "128K",
+    "videoBitrate": "2M"
   }
 }

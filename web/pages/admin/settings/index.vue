@@ -7,6 +7,22 @@
         <p>Lorem ipsum dolor consectetur adipisicing elit.</p>
       </div>
 
+      <b-alert
+        :show="dismissCountDown"
+        dismissible
+        :variant="varint"
+        @dismissed="dismissCountDown=0"
+        @dismiss-count-down="countDownChanged"
+      >
+        <p class="pb-3">{{message}}.</p>
+        <b-progress
+          :variant="varint"
+          :max="dismissSecs"
+          :value="dismissCountDown"
+          height="4px"
+        ></b-progress>
+      </b-alert>
+
       <validation-observer ref="observer" v-slot="{ handleSubmit }">
       <b-form @submit.stop.prevent="handleSubmit(onSubmit)">
         <validation-provider
@@ -115,19 +131,24 @@
 
 <script>
 import { ValidationProvider } from "vee-validate";
+import axios from 'axios'
 
 export default {
   middleware: "auth",
   data() {
     return {
+      dismissSecs: 10,
+      dismissCountDown: 0,
+      message: null,
+      varint: 'success',
+
       form: {
         channelId: "",
         apiKey: "",
         rtmpKey: '',
         resolution: "scale=1280:720",
         audioBitrate: "128K",
-        videoBitrate: "2M",
-        checked: [],
+        videoBitrate: "2M"
       },
       scale: [
         { text: "480p", value: "scale=640:480" },
@@ -152,23 +173,52 @@ export default {
   components: {
     ValidationProvider
   },
+  
+  mounted(){
+    this.resetForm()
+  },
 
   methods: {
     getValidationState({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null;
     },
-    resetForm() {
-      this.form = {
-        name: null,
-        food: null
-      };
 
+    resetForm() {
+      var value = this.$store.getters.setting;
+    
+      this.form = {
+          channelId: value.channelId,
+          apiKey: value.apiKey,
+          rtmpKey: value.rtmpKey,
+          resolution: value.resolution,
+          audioBitrate: value.audioBitrate,
+          videoBitrate: value.videoBitrate
+      };
+      
       this.$nextTick(() => {
         this.$refs.observer.reset();
       });
     },
+
+    countDownChanged(dismissCountDown) {
+      this.dismissCountDown = dismissCountDown
+    },
+
     onSubmit() {
-      alert("Form submitted!");
+      axios.post('http://localhost:4000/setting', 
+        this.form, 
+        {headers: {'Authorization': `Bearer ${this.$store.state.token}`}}
+      ).then((res)=>{
+        this.dismissCountDown = this.dismissSecs
+        this.message = 'Settings saved successfully';
+        this.varint = 'success';
+      })
+      .catch((error)=>{
+        console.log(error);
+        this.dismissCountDown = this.dismissSecs
+        this.message = this.error.data;
+        this.varint = 'danger';
+      })
     }
   }
 };

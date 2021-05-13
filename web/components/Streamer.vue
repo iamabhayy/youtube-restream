@@ -55,7 +55,7 @@ export default {
             form: {
                 channelId: '',
                 rtmpUrl: 'rtmp://a.rtmp.youtube.com/live2',
-                streamingKey: 'dexv-s07x-50cu-z7r1-3aaq'
+                streamingKey: this.$store.state.setting.rtmpKey
             }
         }
     },

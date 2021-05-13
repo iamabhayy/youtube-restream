@@ -14,7 +14,7 @@
                     User
                 </template>
                 <b-dropdown-item to="/admin/profile">Profile</b-dropdown-item>
-                <b-dropdown-item href="#">Sign Out</b-dropdown-item>
+                <b-dropdown-item @click="logout">Sign Out</b-dropdown-item>
             </b-nav-item-dropdown>
         </b-navbar-nav>
         </b-collapse>
@@ -24,7 +24,11 @@
 
 <script>
 export default {
-
+    methods: {
+        logout() {
+            this.$store.commit('logoutUser');
+        }
+    },
 }
 </script>
 

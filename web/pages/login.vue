@@ -68,7 +68,7 @@ export default {
               maxAge: 60 * 60 * 24 * 7
             });
 
-            this.$store.commit('setUser', {user: response.data.user});
+            this.$store.commit('setUser', {user: response.data.user, setting: response.data.setting});
 
             this.$router.push('/admin/dashboard')
           })
