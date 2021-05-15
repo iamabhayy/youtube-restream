@@ -10,19 +10,15 @@
             <video playsinline autoplay width="100%" id="myStream" height="56.25%" class="border" muted></video>
             <span class="badge badge-danger m-4 p-2 stream-status">Live</span>
             <div class="d-flex justify-content-center align-items-center my-4 action">
-                <button type="button" class="btn btn-primary btn-lg btn-circle">
-                    <i class="fas fa-microphone"></i>
-                </button>
-                <button type="button" class="btn btn-warning btn-lg btn-circle mx-3" @click="startRecording">Publish</button>
-                <button type="button" class="btn btn-success btn-lg btn-circle" @click="stopRecording">
-                    <i class="fas fa-video"></i>
-                </button>
+                <AudioButton :audioStatus="constraints.audio" />
+                <BroadcastButton />
+                <VideoButton :videoStatus="constraints.video" />
             </div>
         </div>
 
         <div class="card mt-4">
             <div class="card-body">
-                <h6 class="card-title">Your live streaming youtube url</h6>
+                <h6 class="card-title">Your live streaming rtmp url</h6>
                 <div class="input-group mb-3">
                     <input type="text" class="form-control" disabled v-model="url" aria-describedby="basic-addon2">
                     <div class="input-group-append">
@@ -45,7 +41,7 @@ export default {
         return {
             videoEl: null,
             mediaRecorder: null,
-            url: 'https://www.youtube.com/channel/UCN7dywl5wDxTu1RM3eJ_h9Q/videos',
+            url: `rtmp://a.rtmp.youtube.com/live2/${this.$store.state.setting.rtmpKey}`,
             constraints :{
                 audio: true,
                 video: {
@@ -57,11 +53,6 @@ export default {
     },
 
     methods: {
-        handleSuccess(stream) {
-            window.stream = stream; // make stream available to browser console
-            this.videoEl.srcObject = stream;
-        },
-
         startRecording() {
             const mimeType = 'video/webm;codecs=vp9,opus';
             const options = {mimeType};
@@ -92,17 +83,45 @@ export default {
             this.mediaRecorder.stop();
         },
 
+        enableAudio(){
+            this.constraints.audio = true;
+            console.log(this.mediaRecorder);
+        },
+
+        disableAudio(){
+            this.constraints.audio = false;
+            console.log(this.constraints);
+        },
+
+        enableVideo(){
+            this.constraints.video = true;
+            console.log(this.constraints);
+        },
+
+        disableVideo(){
+            this.constraints.video = false;
+            console.log(this.constraints);
+        },
+
+
+        // Calback function for webrtc
+
+        handleSuccess(stream) {
+            window.stream = stream; // make stream available to browser console
+            this.videoEl.srcObject = stream;
+        },
+
+        handleError(error) {
+            console.log(error);
+            console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
+        },
+
         handleDataAvailable(event) {
             console.log('handleDataAvailable', event);
             if (event.data && event.data.size > 0) {
                 socket.emit('broadcastStream', event.data)
             }
         },
-
-        handleError(error) {
-            console.log(error);
-            console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
-        }
     },
 
     mounted() {
@@ -130,12 +149,5 @@ export default {
         bottom: 0px;
         width: 100%;
         background-color: transparent;
-    }
-
-    .btn-circle {
-        border-radius: 25px;
-        padding-left: 16px;
-        padding-right: 16px;
-        text-align: center;
     }
 </style>
