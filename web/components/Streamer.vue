@@ -1,6 +1,6 @@
 <template>
   <b-card no-body  style="overflow: hidden;">
-      <video src="http://localhost:4000/output.mp4" controls></video>
+      <video :src="`${$config.apiUrl}/output.mp4`" controls></video>
       <small class="text-muted px-3 pt-3">Downloaded 3 mins ago</small>
       <hr>
       <div class="px-3 pb-3">

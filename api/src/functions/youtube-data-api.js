@@ -1,9 +1,17 @@
 import axios from 'axios';
+import low from 'lowdb';
+import FileSync from 'lowdb/adapters/FileSync';
+
+const adapter = new FileSync('db.json')
+const db = low(adapter)
 
 export default async function getOptions(days) {
+    
     // Load from database
-    const channelId = 'UCj3Eqiob8ju1Z3RCJpNMdig';
-    const youtubeApi = 'AIzaSyDMMUdLMnw-lqZrbSsIBlJZulF7HbdNAww';
+    const setting = db.get('setting').value();
+
+    const channelId = setting.channelId;
+    const youtubeApi = setting.apiKey;
     const limit = 20;
 
     const {data} = await axios.get(`https://www.googleapis.com/youtube/v3/search?key=${youtubeApi}&channelId=${channelId}&part=snippet,id&order=date&maxResults=${limit}`)

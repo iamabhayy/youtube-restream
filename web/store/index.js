@@ -39,7 +39,7 @@ export const actions = {
 
     if (token) {
       try {
-        const res =  await axios.get('http://localhost:4000/user', {
+        const res =  await axios.get(`${this.$config.apiUrl}/user`, {
             headers: {
               'Authorization': `Bearer ${token}` 
             }
@@ -57,7 +57,7 @@ export const actions = {
 
   async loadMe({ commit, state }) {
     try {
-        const res =  await axios.get('http://localhost:4000/user', {
+        const res =  await axios.get(`${this.$config.apiUrl}/user`, {
             headers: {
                 'Authorization': `Bearer ${state.token}` 
             }

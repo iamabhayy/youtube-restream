@@ -2,7 +2,7 @@
   <div class="">
     <div>
       <b-jumbotron>
-        <h2>BootstrapVue</h2>
+        <h2>Re Streamer</h2>
 
         <p>
           This is a simple hero unit, a simple jumbotron-style component for calling extra attention to

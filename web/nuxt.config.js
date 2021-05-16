@@ -12,8 +12,8 @@ export default {
     ]
   },
 
-  env: {
-    serverUrl: process.env.BASE_SERVER_URL || 'http://localhost:4000'
+  publicRuntimeConfig: {
+    apiUrl: process.env.BASE_API_URL || 'http://localhost:4000'
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
@@ -42,20 +42,10 @@ export default {
     '@nuxtjs/axios',
     // https://go.nuxtjs.dev/pwa
     '@nuxtjs/pwa',
-
-    'nuxt-socket-io',
+    
     'cookie-universal-nuxt',
   ],
-
-  io: {
-    // module options
-    sockets: [{
-      name: 'main',
-      url: 'http://localhost:4000'
-    }]
-  },
   
-
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {},
 

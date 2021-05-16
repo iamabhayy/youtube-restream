@@ -56,7 +56,7 @@ export default {
       login() {
         if(this.form.email && this.form.password){
           this.busy = true;
-          axios.post('http://localhost:4000/login', {
+          axios.post(`${this.$config.apiUrl}/login`, {
             email: this.form.email,
             password: this.form.password
           }).then((response)=> {

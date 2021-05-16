@@ -205,7 +205,7 @@ export default {
     },
 
     onSubmit() {
-      axios.post('http://localhost:4000/setting', 
+      axios.post(`${this.$config.apiUrl}/setting`, 
         this.form, 
         {headers: {'Authorization': `Bearer ${this.$store.state.token}`}}
       ).then((res)=>{
