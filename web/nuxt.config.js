@@ -13,7 +13,7 @@ export default {
   },
 
   publicRuntimeConfig: {
-    apiUrl: process.env.BASE_API_URL || 'http://localhost:4000'
+    apiUrl: process.env.BASE_API_URL || 'https://khabarichacha.in/api'
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css

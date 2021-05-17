@@ -7,8 +7,7 @@
 
 <script>
 export default {
-  middleware: 'auth',
-
+  middleware: "admin-auth",
 }
 </script>
 

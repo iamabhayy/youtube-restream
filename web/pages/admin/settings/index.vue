@@ -134,7 +134,7 @@ import { ValidationProvider } from "vee-validate";
 import axios from 'axios'
 
 export default {
-  middleware: "auth",
+  middleware: "admin-auth",
   data() {
     return {
       dismissSecs: 10,
