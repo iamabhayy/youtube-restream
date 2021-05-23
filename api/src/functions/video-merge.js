@@ -1,33 +1,39 @@
 import fs from 'fs';
-import path from 'path';
-import {exec} from 'child_process';
-import fileExtension from 'file-extension'; 
+import {spawn} from 'child_process';
 
+var list = [];
 const videoDirectory = 'videos/';
-
-var list = ""
-var listFilePath = 'src/functions/list.txt'
 var outputFilePath = 'stream/output.mp4'
 
 export default function mergeVideo() {
     fs.readdir(videoDirectory, (err, files) => {
+        if(err) return;
+
         files.forEach((file, idx) => {
-            fs.renameSync(`${videoDirectory+file}`, `${videoDirectory+idx+'.'+fileExtension(file)}`)
-            list += `file ../../${videoDirectory+idx+'.'+fileExtension(file)}`
-            list += "\n"
+            list.push('-i');
+            list.push((videoDirectory+file).toString());
         });
-    
-        var writeStream = fs.createWriteStream(listFilePath);
-        writeStream.write(list);
-        writeStream.end();
-    
-        exec(`ffmpeg -y -safe 0 -f concat -i ${listFilePath} -c copy ${outputFilePath}`, (error, stdout, stderr) => {
-            if (error) {
-                console.log(`error: ${error.message}`);
-                return;
-            }
-            else {
+
+        var filterComplex = "";
+
+        for (let index = 0; index < list.length/2; index++) {
+            filterComplex = filterComplex+`[${index}:v:0][${index}:a:0]`;
+        }
+
+        filterComplex = filterComplex+`concat=n=${list.length/2}:v=1:a=1[video_out][audio_out]`;
+        const command = [...list, '-filter_complex', filterComplex, '-map', "[video_out]", '-map', "[audio_out]", outputFilePath]
+        console.log(command);
+
+        const merg_process = spawn('ffmpeg', command)
+
+        merg_process.stderr.on('data', (res) => {
+            console.log(res);
+        });
+
+        merg_process.on('close', (code) => {
+            if (code == 0) {
                 console.log("videos are successfully merged")
+
                 fs.readdir(videoDirectory, (err, files) => {
                     if (err) throw err;
                     for (const file of files) {
@@ -35,8 +41,19 @@ export default function mergeVideo() {
                     }
                     console.log('Directory clened');
                 });
+
+            } else {
+                console.log('Video merge failled');
             }
-        })
+        });
+
+        merg_process.on('error', (error) => {
+            console.log('child process error' + error);
+        });
+
+        merg_process.on('exit', (error) => {
+            console.log('child process exit' + error);
+        });
     });
 }
 

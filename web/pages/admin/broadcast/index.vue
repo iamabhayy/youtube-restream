@@ -11,8 +11,8 @@
             <span class="badge badge-danger m-4 p-2 stream-status">Live</span>
             <div class="d-flex justify-content-center align-items-center my-4 action">
                 <AudioButton :audioStatus="constraints.audio" />
-                <BroadcastButton />
-                <VideoButton :videoStatus="constraints.video" />
+                <BroadcastButton :streamingStatus="streamingStatus"/>
+                <VideoButton :videoStatus="true" />
             </div>
         </div>
 
@@ -40,6 +40,7 @@ export default {
     data() {
         return {
             videoEl: null,
+            streamingStatus: false,
             mediaRecorder: null,
             url: `rtmp://a.rtmp.youtube.com/live2/${this.$store.state.setting.rtmpKey}`,
             constraints :{
@@ -59,6 +60,7 @@ export default {
 
             try {
                 this.mediaRecorder = new MediaRecorder(window.stream, options);
+                this.streamingStatus = true;
             } catch (e) {
                 console.error('Exception while creating MediaRecorder:', e);
                 errorMsgElement.innerHTML = `Exception while creating MediaRecorder: ${JSON.stringify(e)}`;
@@ -69,6 +71,7 @@ export default {
 
             this.mediaRecorder.onstop = (event) => {
                 console.log('Recorder stopped: ', event);
+                this.streamingStatus = false;
             };
 
             this.mediaRecorder.ondataavailable = this.handleDataAvailable;

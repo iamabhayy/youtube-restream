@@ -22,9 +22,9 @@ const app = express();
 const server = createServer(app);
 
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: '*',
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-  }))
+}))
 
 app.use(
     expressJwt({
@@ -95,7 +95,6 @@ app.post('/setting', async ({user, body}, res) => {
 });
 
 
-
 const io = new Server(server, {
     cors: {
         origin: "*",
@@ -108,7 +107,6 @@ var status = {
     streaming: false,
     source: null,
 };
-
 
 var ffmpegProcess;
 var downloaderProcess;
@@ -239,7 +237,8 @@ io.on("connection", (socket) => {
         console.log(options);
 
         // Start downloading videos from youtube url
-        downloaderProcess = spawn('youtube-dl', options);
+        // downloaderProcess = spawn('youtube-dl', options);
+        downloaderProcess = spawn('youtube-dl', ['-h']);
         
         
         downloaderProcess.stderr.on('data', function (d) {

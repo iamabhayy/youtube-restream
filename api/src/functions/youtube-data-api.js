@@ -14,7 +14,11 @@ export default async function getOptions(days) {
     const youtubeApi = setting.apiKey;
     const limit = 20;
 
+    console.log(setting, youtubeApi);
+
     const {data} = await axios.get(`https://www.googleapis.com/youtube/v3/search?key=${youtubeApi}&channelId=${channelId}&part=snippet,id&order=date&maxResults=${limit}`)
+
+    console.log(data);
 
     var dte = new Date();
     dte.setDate(dte.getDate() - days);
@@ -29,5 +33,5 @@ export default async function getOptions(days) {
         }
     })
 
-    return (['-i', '-f' ,'bestvideo+bestaudio[ext=m4a]/bestvideo+bestaudio/best', '-o', 'videos/%(id)s.%(ext)s',].concat(...list))
+    return (['-i', '-f' , '22', '-o', 'videos/%(id)s.%(ext)s',].concat(...list))
 }
