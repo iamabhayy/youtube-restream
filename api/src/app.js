@@ -237,8 +237,7 @@ io.on("connection", (socket) => {
         console.log(options);
 
         // Start downloading videos from youtube url
-        // downloaderProcess = spawn('youtube-dl', options);
-        downloaderProcess = spawn('youtube-dl', ['-h']);
+        downloaderProcess = spawn('youtube-dl', options);
         
         
         downloaderProcess.stderr.on('data', function (d) {

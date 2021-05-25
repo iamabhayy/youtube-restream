@@ -28,7 +28,7 @@ export default async function getOptions(days) {
 
     data.items.forEach((item)=>{
         var publishedAt = Date.parse(item.snippet.publishedAt);
-        if(publishedAt >= dateBefore){
+        if(publishedAt >= dateBefore && item.snippet.liveBroadcastContent != "live"){
             list.push(`https://www.youtube.com/watch?v=${item.id.videoId}`);
         }
     })

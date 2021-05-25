@@ -1,13 +1,18 @@
 import fs from 'fs';
+import path from 'path';
 import {spawn} from 'child_process';
 
-var list = [];
 const videoDirectory = 'videos/';
 var outputFilePath = 'stream/output.mp4'
 
 export default function mergeVideo() {
+    var list = [];
+    
     fs.readdir(videoDirectory, (err, files) => {
-        if(err) return;
+        if(err) {
+            console.log(err);
+            return;
+        };
 
         files.forEach((file, idx) => {
             list.push('-i');
@@ -21,7 +26,7 @@ export default function mergeVideo() {
         }
 
         filterComplex = filterComplex+`concat=n=${list.length/2}:v=1:a=1[video_out][audio_out]`;
-        const command = [...list, '-filter_complex', filterComplex, '-map', "[video_out]", '-map', "[audio_out]", outputFilePath]
+        const command = ['-y', ...list, '-filter_complex', filterComplex, '-map', "[video_out]", '-map', "[audio_out]", outputFilePath]
         console.log(command);
 
         const merg_process = spawn('ffmpeg', command)
